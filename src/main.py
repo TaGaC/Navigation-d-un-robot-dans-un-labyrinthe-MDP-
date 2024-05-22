@@ -14,10 +14,10 @@ marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)]
 # Récompenses
 reward_goal = 5
 reward_marecage = -1
-reward_default = -0.1
+reward_default =0
 
 # Gamma et epsilon
-gamma = 0.9
+gamma = 0.9  # Ajustez cette valeur pour tester
 epsilon = 0.01
 
 # Actions possibles
@@ -52,10 +52,15 @@ def get_next_state(state, action):
     next_state = (state[0] + effect[0], state[1] + effect[1])
     if is_valid(next_state):
         return next_state
-    return state
+    return None  # Retourne None si le déplacement est hors limites
+
+
 
 # Itération sur les valeurs
+# Itération sur les valeurs
 def value_iteration():
+    global V  # Assurez-vous que V est accessible globalement ou passez-le comme paramètre
+    V[goal[0], goal[1]] = reward_goal  # Initialise la valeur de l'état du but avec sa récompense
     while True:
         delta = 0
         new_V = np.copy(V)
@@ -63,53 +68,72 @@ def value_iteration():
             for j in range(m):
                 state = (i, j)
                 if state == goal:
-                    continue
+                    continue  # Continue d'ignorer la mise à jour du but durant les itérations
                 max_value = float('-inf')
                 for action in actions:
                     action_key = action[0]  # Prendre la première lettre de l'action
                     next_state = get_next_state(state, action_key)
-                    transition_prob = 0.8
+                    if next_state is None:
+                        continue  # Ignore les actions non valides
                     side_states = [
-                        get_next_state(state, 'G') if action in ['Haut', 'Bas'] else get_next_state(state, 'H'),
-                        get_next_state(state, 'D') if action in ['Haut', 'Bas'] else get_next_state(state, 'B')
+                        get_next_state(state, 'G') if action in ['H', 'B'] else get_next_state(state, 'H'),
+                        get_next_state(state, 'D') if action in ['H', 'B'] else get_next_state(state, 'B')
                     ]
-                    value = transition_prob * V[next_state]
+                    value = 0.8 * V[next_state]
                     for side_state in side_states:
-                        value += 0.1 * V[side_state]
-                    max_value = max(max_value, get_reward(state) + gamma * value)
+                        if side_state is not None:
+                            value += 0.1 * V[side_state]
+                        else:
+                            value += 0.1 * V[state]  # Ajoutez la valeur de l'état actuel si le côté est invalide
+                    value = get_reward(state) + gamma * value
+                    max_value = max(max_value, value)
                 new_V[state] = max_value
                 delta = max(delta, abs(new_V[state] - V[state]))
         V[:] = new_V
         if delta < epsilon:
             break
 
-# Calcul de la politique optimale
-def extract_policy():
-    policy = np.empty((n, m), dtype=str)
+
+
+# Calcul des Q-valeurs
+def calculate_q_values(V):
+    Q = np.zeros((n, m, len(actions)))
     for i in range(n):
         for j in range(m):
             state = (i, j)
             if state == goal:
-                policy[state] = 'F'
                 continue
-            max_value = float('-inf')
-            best_action = None
-            for action in actions:
+            for k, action in enumerate(actions):
                 action_key = action[0]  # Prendre la première lettre de l'action
                 next_state = get_next_state(state, action_key)
-                transition_prob = 0.8
+                if next_state is None:
+                    Q[i, j, k] = float('-inf')  # Attribuer une pénalité extrême pour sortir des limites
+                    continue
+                
                 side_states = [
-                    get_next_state(state, 'G') if action in ['Haut', 'Bas'] else get_next_state(state, 'H'),
-                    get_next_state(state, 'D') if action in ['Haut', 'Bas'] else get_next_state(state, 'B')
+                    get_next_state(state, 'G') if action in ['H', 'B'] else get_next_state(state, 'H'),
+                    get_next_state(state, 'D') if action in ['H', 'B'] else get_next_state(state, 'B')
                 ]
-                value = transition_prob * V[next_state]
+                value = 0.8 * V[next_state if next_state else state]  # Utilise l'état actuel si next_state est None
                 for side_state in side_states:
-                    value += 0.1 * V[side_state]
-                value = get_reward(state) + gamma * value
-                if value > max_value:
-                    max_value = value
-                    best_action = action_key
-            policy[state] = best_action
+                    if side_state and is_valid(side_state):
+                        value += 0.1 * V[side_state]
+                    else:
+                        value += 0.1 * V[state]
+                Q[i, j, k] = get_reward(state) + gamma * value
+    return Q
+
+
+# Extraction de la politique optimale basée sur les Q-valeurs
+def extract_policy(Q):
+    policy = np.empty((n, m), dtype=str)
+    for i in range(n):
+        for j in range(m):
+            if (i, j) == goal:
+                policy[i, j] = 'F'
+                continue
+            best_action = np.argmax(Q[i, j])
+            policy[i, j] = actions[best_action][0]
     return policy
 
 # Extraire le chemin optimal à partir de la politique
@@ -119,13 +143,13 @@ def extract_path(policy):
     while state != goal:
         path.append(state)
         action = policy[state]
-        if action == 'F':  # État d'arrivée atteint
+        next_state = get_next_state(state, action)
+        if next_state is None or next_state == state or next_state in path:  # Vérifiez la validité et évitez les boucles
             break
-        state = get_next_state(state, action)
-        if state in path:  # En cas de boucle infinie
-            break
+        state = next_state
     path.append(goal)
     return path
+
 
 # Fonction qui plot les valeurs des états et la politique optimale avec couleurs pour départ, arrivée, et chemin
 def plot_values_and_policy(V, policy, path):
@@ -156,12 +180,15 @@ def plot_values_and_policy(V, policy, path):
 
 # Exécution de l'algorithme
 value_iteration()
-policy = extract_policy()
+Q = calculate_q_values(V)
+policy = extract_policy(Q)
 path = extract_path(policy)
 
 # Affichage des résultats
 print("Valeurs des états:")
 print(V)
+print("\nQ-valeurs:")
+print(Q)
 print("\nPolitique optimale:")
 print(policy)
 print("\nChemin optimal:")
