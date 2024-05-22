@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 # Dimensions de la grille
 n, m = 5, 5
@@ -9,16 +10,15 @@ start = (4, 1)
 goal = (0, 3)
 
 # Positions des marécages
-marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)]
-
+marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3), (3, 4), (3,0)]
 # Récompenses
 reward_goal = 5
 reward_marecage = -1
 reward_default =0
 
 # Gamma et epsilon
-gamma = 0.9  # Ajustez cette valeur pour tester
-epsilon = 0.01
+gamma = 0.9  # Un γ proche de 1 fait en sorte que l'agent valorise fortement les récompenses futures, ce qui le rend plus stratégique avec une planification à long terme. Un γ proche de 0 rend l'agent myope aux récompenses futures, se concentrant presque exclusivement sur les récompenses immédiates.
+epsilon = 0.1 #  un seuil de convergence dans l'itération de valeur. Il détermine à quel point la différence entre les valeurs estimées des états à travers les itérations doit être petite avant que l'algorithme puisse arrêter de s'exécuter.
 
 # Actions possibles
 actions = ['Haut', 'Bas', 'Gauche', 'Droite']
@@ -90,7 +90,7 @@ def value_iteration():
                 new_V[state] = max_value
                 delta = max(delta, abs(new_V[state] - V[state]))
         V[:] = new_V
-        if delta < epsilon:
+        if delta <= epsilon:
             break
 
 
@@ -155,27 +155,40 @@ def extract_path(policy):
 def plot_values_and_policy(V, policy, path):
     n, m = V.shape
     fig, ax = plt.subplots()
-    im = ax.imshow(V, cmap='coolwarm')
-
+    
+    # Créer une liste de couleurs pour la colormap
+    cmap_list = ['white', 'darkgreen', 'blue', 'red', 'yellow']  # normal, marécage, départ, arrivée, chemin
+    cmap = ListedColormap(cmap_list)
+    
+    # Préparer un tableau pour les indices des couleurs
+    color_indices = np.zeros((n, m))
     for i in range(n):
         for j in range(m):
             if (i, j) == start:
-                color = 'blue'
+                color_indices[i, j] = 2  # Départ en vert
             elif (i, j) == goal:
-                color = 'green'
+                color_indices[i, j] = 3  # Arrivée en rouge
+            elif (i, j) in marecages:
+                color_indices[i, j] = 1  # Marécages en vert foncé
             elif (i, j) in path:
-                color = 'yellow'
+                color_indices[i, j] = 4  # Chemin en jaune
             else:
-                color = 'black'
+                color_indices[i, j] = 0  # Autres cases en blanc
+
+    # Afficher les cases avec la colormap personnalisée
+    ax.imshow(color_indices, cmap=cmap, interpolation='nearest')
+
+    # Ajouter les textes de valeur et politique
+    for i in range(n):
+        for j in range(m):
             text = ax.text(j, i, f'{V[i, j]:.2f}\n{policy[i, j]}',
-                           ha='center', va='center', color=color)
+                           ha='center', va='center', color='black' if (i, j) not in path else 'black')
 
     ax.set_xticks(np.arange(m))
     ax.set_yticks(np.arange(n))
     ax.set_xticklabels(np.arange(m))
     ax.set_yticklabels(np.arange(n))
     ax.set_title("Valeurs des États et Politique Optimale")
-    fig.tight_layout()
     plt.show()
 
 # Exécution de l'algorithme
