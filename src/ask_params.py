@@ -33,6 +33,7 @@ class ParamInputApp:
         self.eps_label_left = tk.Label(root, text="ε (entre 0 et 1)")
         self.eps_label_left.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
         self.eps_entry = tk.Entry(root)
+        self.eps_entry.insert(0, "0.1")
         self.eps_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
 
         # Gain_goal input
