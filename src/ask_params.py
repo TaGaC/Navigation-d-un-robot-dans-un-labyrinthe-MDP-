@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
+from algo import lunch_algo
 
 class ParamInputApp:
     def __init__(self, root):
@@ -219,6 +220,8 @@ class ParamInputApp:
         print(f"Position de départ: {self.start_pos}")
         print(f"Position de fin: {self.end_pos}")
         print(f"Positions des murs: {self.walls}")
+
+        lunch_algo(self.grid_size, self.grid_size, self.start_pos, self.end_pos, self.walls, self.gain_goal, self.gain_mare, self.gamma, self.epsilon)
 
 if __name__ == "__main__":
     root = tk.Tk()
