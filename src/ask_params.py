@@ -23,7 +23,7 @@ class ParamInputApp:
 
         self.gamma_label_left = tk.Label(root, text="Ɣ (entre 0 et 1)")
         self.gamma_label_left.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-        self.gamma_entry = tk.Entry(root)
+        self.gamma_entry = tk.Entry(root, justify="center")
         self.gamma_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
         # Esilon input
@@ -32,7 +32,7 @@ class ParamInputApp:
 
         self.eps_label_left = tk.Label(root, text="ε (entre 0 et 1)")
         self.eps_label_left.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
-        self.eps_entry = tk.Entry(root)
+        self.eps_entry = tk.Entry(root, justify="center")
         self.eps_entry.insert(0, "0.1")
         self.eps_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
 
@@ -42,19 +42,20 @@ class ParamInputApp:
 
         self.goal_label_left = tk.Label(root, text="Gain de l'objectif")
         self.goal_label_left.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
-        self.goal_entry = tk.Entry(root)
+        self.goal_entry = tk.Entry(root, justify="center")
         self.goal_entry.grid(row=5, column=1, padx=10, pady=10, sticky="ew")
 
         self.mare_label_left = tk.Label(root, text="Gain du marécage")
         self.mare_label_left.grid(row=6, column=0, padx=10, pady=10, sticky="nsew")
-        self.mare_entry = tk.Entry(root)
+        self.mare_entry = tk.Entry(root, justify="center")
         self.mare_entry.grid(row=6, column=1, padx=10, pady=10, sticky="ew")
 
         # Grid size input
         self.grid_size_label = tk.Label(root, text="Taille du quadrillage")
         self.grid_size_label.grid(row=7, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-        self.grid_size_entry = tk.Entry(root)
+        self.grid_size_entry = tk.Entry(root, justify="center")
+        self.grid_size_entry.insert(0, "6")
         self.grid_size_entry.grid(row=8, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         # Submit button
