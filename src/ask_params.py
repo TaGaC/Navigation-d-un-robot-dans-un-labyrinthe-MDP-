@@ -131,7 +131,7 @@ class ParamInputApp:
 
         # Make the grid_window responsive
         for i in range(grid_size):
-            self.grid_window.rowconfigure(i, weight=1)
+            self.grid_window.rowconfigure(i, weight=4)
             self.grid_window.columnconfigure(i, weight=1)
 
         # Variables to store start and end positions
@@ -150,6 +150,10 @@ class ParamInputApp:
         # Add a button to finish wall selection, initially disabled
         self.finish_button = tk.Button(self.grid_window, text="Terminer la sélection des murs", state=tk.DISABLED, command=self.finish_walls)
         self.finish_button.grid(row=grid_size, columnspan=grid_size, sticky="nsew")
+
+        # Make the button row responsive
+        self.grid_window.rowconfigure(grid_size, weight=1)
+
 
     def adjust_grid_widgets(self, event):
         grid_size = self.grid_size
