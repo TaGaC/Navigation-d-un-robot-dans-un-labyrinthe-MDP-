@@ -10,14 +10,14 @@ start = (4, 1)
 goal = (0, 3)
 
 # Positions des marécages
-marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3), (3, 4), (3,0)]
+marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)]
 # Récompenses
 reward_goal = 5
-reward_marecage = -1
+reward_marecage = -2
 reward_default =0
 
 # Gamma et epsilon
-gamma = 0.9  # Un γ proche de 1 fait en sorte que l'agent valorise fortement les récompenses futures, ce qui le rend plus stratégique avec une planification à long terme. Un γ proche de 0 rend l'agent myope aux récompenses futures, se concentrant presque exclusivement sur les récompenses immédiates.
+gamma = 0.5 # Un γ proche de 1 fait en sorte que l'agent valorise fortement les récompenses futures, ce qui le rend plus stratégique avec une planification à long terme. Un γ proche de 0 rend l'agent myope aux récompenses futures, se concentrant presque exclusivement sur les récompenses immédiates.
 epsilon = 0.1 #  un seuil de convergence dans l'itération de valeur. Il détermine à quel point la différence entre les valeurs estimées des états à travers les itérations doit être petite avant que l'algorithme puisse arrêter de s'exécuter.
 
 # Actions possibles
@@ -56,10 +56,10 @@ def get_next_state(state, action):
 
 
 
-# Itération sur les valeurs
+
 # Itération sur les valeurs
 def value_iteration():
-    global V  # Assurez-vous que V est accessible globalement ou passez-le comme paramètre
+    global V
     V[goal[0], goal[1]] = reward_goal  # Initialise la valeur de l'état du but avec sa récompense
     while True:
         delta = 0
@@ -75,16 +75,26 @@ def value_iteration():
                     next_state = get_next_state(state, action_key)
                     if next_state is None:
                         continue  # Ignore les actions non valides
-                    side_states = [
-                        get_next_state(state, 'G') if action in ['H', 'B'] else get_next_state(state, 'H'),
-                        get_next_state(state, 'D') if action in ['H', 'B'] else get_next_state(state, 'B')
-                    ]
-                    value = 0.8 * V[next_state]
+
+                    # Définir les états latéraux basés sur l'action principale
+                    if action_key in ['H', 'B']:  # Mouvements verticaux
+                        side_states = [
+                            get_next_state(next_state, 'G'),  # Mouvement latéral gauche
+                            get_next_state(next_state, 'D')   # Mouvement latéral droit
+                        ]
+                    else:  # 'G' ou 'D' - Mouvements horizontaux
+                        side_states = [
+                            get_next_state(next_state, 'H'),  # Mouvement vertical haut
+                            get_next_state(next_state, 'B')   # Mouvement vertical bas
+                        ]
+
+                    value = 0.8 * V[next_state]  # Probabilité principale
                     for side_state in side_states:
                         if side_state is not None:
-                            value += 0.1 * V[side_state]
+                            value += 0.1 * V[side_state]  # Probabilités latérales
                         else:
-                            value += 0.1 * V[state]  # Ajoutez la valeur de l'état actuel si le côté est invalide
+                            value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal
+
                     value = get_reward(state) + gamma * value
                     max_value = max(max_value, value)
                 new_V[state] = max_value
@@ -109,17 +119,26 @@ def calculate_q_values(V):
                 if next_state is None:
                     Q[i, j, k] = float('-inf')  # Attribuer une pénalité extrême pour sortir des limites
                     continue
-                
-                side_states = [
-                    get_next_state(state, 'G') if action in ['H', 'B'] else get_next_state(state, 'H'),
-                    get_next_state(state, 'D') if action in ['H', 'B'] else get_next_state(state, 'B')
-                ]
-                value = 0.8 * V[next_state if next_state else state]  # Utilise l'état actuel si next_state est None
+
+                # Définir les états latéraux basés sur l'action principale
+                if action_key in ['H', 'B']:  # Mouvements verticaux
+                    side_states = [
+                        get_next_state(next_state, 'G'),  # Mouvement latéral gauche
+                        get_next_state(next_state, 'D')   # Mouvement latéral droit
+                    ]
+                else:  # 'G' ou 'D' - Mouvements horizontaux
+                    side_states = [
+                        get_next_state(next_state, 'H'),  # Mouvement vertical haut
+                        get_next_state(next_state, 'B')   # Mouvement vertical bas
+                    ]
+
+                value = 0.8 * V[next_state]  # Probabilité principale
                 for side_state in side_states:
-                    if side_state and is_valid(side_state):
-                        value += 0.1 * V[side_state]
+                    if side_state is not None:
+                        value += 0.1 * V[side_state]  # Probabilités latérales
                     else:
-                        value += 0.1 * V[state]
+                        value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal
+
                 Q[i, j, k] = get_reward(state) + gamma * value
     return Q
 
