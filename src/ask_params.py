@@ -10,7 +10,7 @@ class ParamInputApp:
         # Configure the grid to be responsive
         self.root.columnconfigure(0, weight=1)
         self.root.columnconfigure(1, weight=1)
-        for i in range(5):
+        for i in range(10):
             self.root.rowconfigure(i, weight=1)
         
         # Variables for gamma and grid size
@@ -26,27 +26,50 @@ class ParamInputApp:
         self.gamma_entry = tk.Entry(root)
         self.gamma_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
+        # Esilon input
+        self.eps_label = tk.Label(root, text="Epsilon")
+        self.eps_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.eps_label_left = tk.Label(root, text="ε (entre 0 et 1)")
+        self.eps_label_left.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
+        self.eps_entry = tk.Entry(root)
+        self.eps_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+
+        # Gain_goal input
+        self.gain_label = tk.Label(root, text="Gain")
+        self.gain_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        self.goal_label_left = tk.Label(root, text="Gain de l'objectif")
+        self.goal_label_left.grid(row=5, column=0, padx=10, pady=10, sticky="nsew")
+        self.goal_entry = tk.Entry(root)
+        self.goal_entry.grid(row=5, column=1, padx=10, pady=10, sticky="ew")
+
+        self.mare_label_left = tk.Label(root, text="Gain du marécage")
+        self.mare_label_left.grid(row=6, column=0, padx=10, pady=10, sticky="nsew")
+        self.mare_entry = tk.Entry(root)
+        self.mare_entry.grid(row=6, column=1, padx=10, pady=10, sticky="ew")
+
         # Grid size input
         self.grid_size_label = tk.Label(root, text="Taille du quadrillage")
-        self.grid_size_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.grid_size_label.grid(row=7, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         self.grid_size_entry = tk.Entry(root)
-        self.grid_size_entry.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.grid_size_entry.grid(row=8, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         # Submit button
         self.submit_button = tk.Button(root, text="Soumettre", command=self.submit)
-        self.submit_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.submit_button.grid(row=9, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         # Bind the <Configure> event to adjust the font size and widget dimensions
         self.root.bind("<Configure>", self.adjust_widgets)
 
     def adjust_widgets(self, event):
         # Calculate new font size based on window height
-        new_font_size = max(8, int(self.root.winfo_height() / 25))
+        new_font_size = max(10, int(self.root.winfo_height() / 25))
         font = ("TkDefaultFont", new_font_size)
 
         # Update font for all widgets
-        for widget in [self.gamma_label, self.gamma_label_left, self.gamma_entry, self.grid_size_label, self.grid_size_entry, self.submit_button]:
+        for widget in [self.gamma_label, self.gamma_label_left, self.gamma_entry, self.eps_label, self.eps_label_left, self.eps_entry, self.gain_label, self.goal_entry, self.goal_label_left, self.mare_entry, self.mare_label_left, self.grid_size_label, self.grid_size_entry, self.submit_button]:
             widget.config(font=font)
 
         # Update padding for better visual adaptation
@@ -60,6 +83,14 @@ class ParamInputApp:
             if self.gamma < 0 or self.gamma > 1:
                 raise ValueError("Gamma doit être entre 0 et 1")
             
+            self.epsilon = float(self.eps_entry.get())
+            if self.epsilon < 0 or self.epsilon > 1:
+                raise ValueError("Epsilon doit être entre 0 et 1")
+            
+            self.gain_goal = float(self.goal_entry.get())
+            
+            self.gain_mare = float(self.mare_entry.get())
+
             self.grid_size = int(self.grid_size_entry.get())
             if self.grid_size < 1 or self.grid_size > 10:
                 raise ValueError("La taille du quadrillage doit être comprise entre 1 et 10")
@@ -120,12 +151,6 @@ class ParamInputApp:
         self.finish_button = tk.Button(self.grid_window, text="Terminer la sélection des murs", state=tk.DISABLED, command=self.finish_walls)
         self.finish_button.grid(row=grid_size, columnspan=grid_size, sticky="nsew")
 
-        # Make the button row responsive
-        self.grid_window.rowconfigure(grid_size, weight=0.25)
-
-        # Bind the <Configure> event to adjust the font size and widget dimensions in the grid window
-        self.grid_window.bind("<Configure>", self.adjust_grid_widgets)
-
     def adjust_grid_widgets(self, event):
         grid_size = self.grid_size
 
@@ -178,6 +203,9 @@ class ParamInputApp:
 
         # Print the collected parameters for verification
         print(f"Gamma: {self.gamma}")
+        print(f"Epsilon: {self.epsilon}")
+        print(f"Gain de la cible: {self.gain_goal}")
+        print(f"Gain du marécage: {self.gain_mare}")
         print(f"Taille du quadrillage: {self.grid_size}")
         print(f"Position de départ: {self.start_pos}")
         print(f"Position de fin: {self.end_pos}")
