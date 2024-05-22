@@ -17,10 +17,10 @@ reward_marecage = -1
 reward_default = -0.1
 
 # Gamma et epsilon
-gamma = 0,9
+gamma = 0.9
 epsilon = 0.01
 
-# Actions possibles, on part du principe que notre case 0,0 est en haut à gauche
+# Actions possibles, on part du principe que notre case 0,0 est en haut à gauche, c'est plus simple à gerer pour les matrices
 actions = ['Haut', 'Bas', 'Gauche', 'Droite']
 action_effects = {
     'Haut': (-1, 0),
