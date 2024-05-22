@@ -9,7 +9,7 @@ start = (4, 1)
 goal = (0, 3)
 
 # Positions des marécages
-marecages = [(1, 1), (1, 2), (1,3), (2,3), (3,3)]
+marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)]
 
 # Récompenses
 reward_goal = 5
@@ -20,13 +20,13 @@ reward_default = -0.1
 gamma = 0.9
 epsilon = 0.01
 
-# Actions possibles, on part du principe que notre case 0,0 est en haut à gauche, c'est plus simple à gerer pour les matrices
+# Actions possibles
 actions = ['Haut', 'Bas', 'Gauche', 'Droite']
 action_effects = {
-    'Haut': (-1, 0),
-    'Bas': (1, 0),
-    'Gauche': (0, -1),
-    'Droite': (0, 1)
+    'H': (-1, 0),  # Haut
+    'B': (1, 0),   # Bas
+    'G': (0, -1),  # Gauche
+    'D': (0, 1)    # Droite
 }
 
 # Initialisation des valeurs des états
@@ -66,11 +66,12 @@ def value_iteration():
                     continue
                 max_value = float('-inf')
                 for action in actions:
-                    next_state = get_next_state(state, action)
+                    action_key = action[0]  # Prendre la première lettre de l'action
+                    next_state = get_next_state(state, action_key)
                     transition_prob = 0.8
                     side_states = [
-                        get_next_state(state, 'Gauche') if action in ['Haut', 'Bas'] else get_next_state(state, 'Haut'),
-                        get_next_state(state, 'Droite') if action in ['Haut', 'Bas'] else get_next_state(state, 'Bas')
+                        get_next_state(state, 'G') if action in ['Haut', 'Bas'] else get_next_state(state, 'H'),
+                        get_next_state(state, 'D') if action in ['Haut', 'Bas'] else get_next_state(state, 'B')
                     ]
                     value = transition_prob * V[next_state]
                     for side_state in side_states:
@@ -89,37 +90,61 @@ def extract_policy():
         for j in range(m):
             state = (i, j)
             if state == goal:
-                policy[state] = 'G'
+                policy[state] = 'F'
                 continue
             max_value = float('-inf')
             best_action = None
             for action in actions:
-                next_state = get_next_state(state, action)
+                action_key = action[0]  # Prendre la première lettre de l'action
+                next_state = get_next_state(state, action_key)
                 transition_prob = 0.8
                 side_states = [
-                    get_next_state(state, 'Gauche') if action in ['Haut', 'Bas'] else get_next_state(state, 'Haut'),
-                    get_next_state(state, 'Droite') if action in ['Haut', 'Bas'] else get_next_state(state, 'Bas')
+                    get_next_state(state, 'G') if action in ['Haut', 'Bas'] else get_next_state(state, 'H'),
+                    get_next_state(state, 'D') if action in ['Haut', 'Bas'] else get_next_state(state, 'B')
                 ]
                 value = transition_prob * V[next_state]
                 for side_state in side_states:
                     value += 0.1 * V[side_state]
+                value = get_reward(state) + gamma * value
                 if value > max_value:
                     max_value = value
-                    best_action = action
+                    best_action = action_key
             policy[state] = best_action
     return policy
 
+# Extraire le chemin optimal à partir de la politique
+def extract_path(policy):
+    path = []
+    state = start
+    while state != goal:
+        path.append(state)
+        action = policy[state]
+        if action == 'F':  # État d'arrivée atteint
+            break
+        state = get_next_state(state, action)
+        if state in path:  # En cas de boucle infinie
+            break
+    path.append(goal)
+    return path
 
-# Fonction qui plot les valeurs des états et la politique optimale
-def plot_values_and_policy(V, policy):
+# Fonction qui plot les valeurs des états et la politique optimale avec couleurs pour départ, arrivée, et chemin
+def plot_values_and_policy(V, policy, path):
     n, m = V.shape
     fig, ax = plt.subplots()
     im = ax.imshow(V, cmap='coolwarm')
 
     for i in range(n):
         for j in range(m):
+            if (i, j) == start:
+                color = 'blue'
+            elif (i, j) == goal:
+                color = 'green'
+            elif (i, j) in path:
+                color = 'yellow'
+            else:
+                color = 'black'
             text = ax.text(j, i, f'{V[i, j]:.2f}\n{policy[i, j]}',
-                           ha='center', va='center', color='black')
+                           ha='center', va='center', color=color)
 
     ax.set_xticks(np.arange(m))
     ax.set_yticks(np.arange(n))
@@ -132,12 +157,15 @@ def plot_values_and_policy(V, policy):
 # Exécution de l'algorithme
 value_iteration()
 policy = extract_policy()
+path = extract_path(policy)
 
 # Affichage des résultats
 print("Valeurs des états:")
 print(V)
 print("\nPolitique optimale:")
 print(policy)
+print("\nChemin optimal:")
+print(path)
 
 # Afficher les résultats
-plot_values_and_policy(V, policy)
+plot_values_and_policy(V, policy, path)
