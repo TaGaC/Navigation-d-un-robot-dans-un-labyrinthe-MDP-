@@ -4,7 +4,7 @@ from matplotlib.colors import ListedColormap
 import random
 
 # Dimensions de la grille
-n, m = 5, 5
+n, m = 20,20
 
 # Récompenses
 reward_goal = 5
@@ -216,19 +216,6 @@ def plot_values_and_policy(V, policy, path,start,goal,marecages):
     plt.show()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Génération aléatoire de la grille
 def generate_grid():
     start = (random.randint(0, n-1), random.randint(0, m-1))
@@ -236,7 +223,7 @@ def generate_grid():
     while start == goal:
         goal = (random.randint(0, n-1), random.randint(0, m-1))
     
-    num_marecages = random.randint(1, (n*m)//2)  # Limite le nombre de marécages à la moitié des cases
+    num_marecages = random.randint(1, (n*m)//(10/9))  # Limite le nombre de marécages à la moitié des cases
     marecages = set()
     while len(marecages) < num_marecages:
         marecage = (random.randint(0, n-1), random.randint(0, m-1))
@@ -249,7 +236,7 @@ def generate_grid():
 def run_simulation():
     start, goal, marecages = generate_grid()
     V = np.zeros((n, m))  # Initialisation des valeurs des états
-    gamma_values = [0.1, 0,2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]  # Différents niveaux de gamma à tester
+    gamma_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]  # Différents niveaux de gamma à tester
 
     for gamma in gamma_values:
         print(f"Testing with gamma = {gamma}")
@@ -257,19 +244,18 @@ def run_simulation():
         Q = calculate_q_values(V, goal,marecages,gamma) # Il faut rajouter les paramètres de la fonction calculate_q_values
         policy = extract_policy(Q,goal)
         path,result = extract_path(policy, start, goal) # Il faut vérifier si extract path renvoie bine une erreur si le chemin est bloqué
-        plot_values_and_policy(V, policy, path, start, goal, marecages)
+        #plot_values_and_policy(V, policy, path, start, goal, marecages)
         if result != 0 :
             return gamma
-        else :
-            return None
+    return None
 
 # Exécution de l'algorithme 50 fois et calcul du gamma
 gamma_somme = 0
 chemin_trouve = 0 
 for i in range(50) :
-    gamma = run_simulation()
-    if gamma != None :
-        gamma_somme = gamma_somme + gamma
+    gamma_sim = run_simulation()
+    if gamma_sim != None :
+        gamma_somme = gamma_somme + gamma_sim
         chemin_trouve = chemin_trouve + 1
 moyenne = gamma_somme/chemin_trouve
 print(moyenne,chemin_trouve)
