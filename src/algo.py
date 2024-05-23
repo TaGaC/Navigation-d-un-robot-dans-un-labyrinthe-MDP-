@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+import math
 
 # Dimensions de la grille
 n, m = 0, 0
@@ -96,9 +97,9 @@ def value_iteration():
                     value = get_reward(state) + gamma * value
                     max_value = max(max_value, value)
                 new_V[state] = max_value
-                delta = max(delta, abs(new_V[state] - V[state]))
+                delta = delta + abs(new_V[state] - V[state])
         V[:] = new_V
-        if delta <= epsilon:
+        if delta <= epsilon * (1 - gamma) / (2*gamma):
             break
 
 
@@ -109,8 +110,8 @@ def calculate_q_values(V):
     for i in range(n):
         for j in range(m):
             state = (i, j)
-            if state == goal:
-                continue
+            #if state == goal:
+            #    continue
             for k, action in enumerate(actions):
                 action_key = action[0]  # Prendre la première lettre de l'action
                 next_state = get_next_state(state, action_key)
@@ -149,9 +150,31 @@ def extract_policy(Q):
             if (i, j) == goal:
                 policy[i, j] = 'F'
                 continue
-            best_action = np.argmax(Q[i, j])
-            policy[i, j] = actions[best_action][0]
+
+            # Trouver la valeur maximale
+            max_value = np.max(Q[i, j])
+
+            # Trouver tous les indices où la valeur maximale apparaît
+            indices_max = np.where(Q[i, j] == max_value)[0]
+            
+            real_act = None
+            for best_action in indices_max:
+                current_act = actions[best_action][0]
+                if real_act is None:
+                    real_act = current_act
+                elif dist(get_next_state((i, j),real_act), goal) >= dist(get_next_state((i, j), current_act), goal): # distance au goal
+                    if dist(get_next_state((i, j),real_act), goal) == dist(get_next_state((i, j), current_act), goal): # si égalité
+                        if dist(get_next_state((i, j),real_act), start) <= dist(get_next_state((i, j), current_act), start): # distance au start
+                            real_act = current_act
+                    else :
+                        real_act = current_act
+            policy[i, j] = real_act
     return policy
+
+def dist(state, goal):
+    x1, y1 = state
+    x2, y2 = goal
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 # Extraire le chemin optimal à partir de la politique
 def extract_path(policy):
