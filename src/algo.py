@@ -97,7 +97,8 @@ def value_iteration():
                     value = get_reward(state) + gamma * value
                     max_value = max(max_value, value)
                 new_V[state] = max_value
-                delta = delta + abs(new_V[state] - V[state])
+                #delta = delta + abs(new_V[state] - V[state])
+                delta = max(delta, abs(new_V[state] - V[state]))
         V[:] = new_V
         if delta <= epsilon * (1 - gamma) / (2*gamma):
             break
@@ -150,8 +151,9 @@ def extract_policy(Q):
             if (i, j) == goal:
                 policy[i, j] = 'F'
                 continue
-
-            # Trouver la valeur maximale
+            
+            
+            """# Trouver la valeur maximale
             max_value = np.max(Q[i, j])
 
             # Trouver tous les indices où la valeur maximale apparaît
@@ -168,7 +170,7 @@ def extract_policy(Q):
                             real_act = current_act
                     else :
                         real_act = current_act
-            policy[i, j] = real_act
+            policy[i, j] = real_act"""
     return policy
 
 def dist(state, goal):
