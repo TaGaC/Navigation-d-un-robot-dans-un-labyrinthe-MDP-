@@ -6,14 +6,8 @@ import random
 # Dimensions de la grille
 n, m = 5, 5
 
-# Positions de départ et d'arrivée
-start = (4, 1)
-goal = (0, 3)
-
-# Positions des marécages
-marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)]
 # Récompenses
-reward_goal = 10
+reward_goal = 5
 reward_marecage = -2
 reward_default = 0
 
@@ -34,7 +28,7 @@ action_effects = {
 V = np.zeros((n, m))
 
 # Fonction de récompense
-def get_reward(state):
+def get_reward(state, goal, marecages):
     if state == goal:
         return reward_goal
     elif state in marecages:
@@ -59,7 +53,7 @@ def get_next_state(state, action):
 
 
 # Algorithme d'itération sur la Valeur (Vi), permet de déterminer les valeurs des états en fonction des récompenses et des valeurs des états voisins, on applique la formule de Bellman pour mettre à jour la valeur de l'état, on répète l'opération jusqu'à ce que sa se stabilise (V(n-1) = V(n)), si c'est pas parfait, le epsilon permet de déterminer la marge d'erreur pour arrêter l'itération
-def value_iteration(V):  # Voir diapo 31 du cours pour le détail de l'algorithme
+def value_iteration(V,goal,marecages):  # Voir diapo 31 du cours pour le détail de l'algorithme
     V[goal[0], goal[1]] = reward_goal  # Initialise la valeur de l'état du but avec sa récompense
     max_iterations = 100  # Limite à 100 itérations pour éviter les boucles infinies
     epsilon_threshold = epsilon * (1 - gamma) / (2 * gamma)  # Seuil de convergence basé sur la condition donnée
@@ -98,7 +92,7 @@ def value_iteration(V):  # Voir diapo 31 du cours pour le détail de l'algorithm
                         else:
                             value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal  on passerait donc à 0,9 pour la probabilité de l'action principale
 
-                    value = get_reward(state) + gamma * value  # On applique la formule de Bellman pour mettre à jour la valeur de l'état
+                    value = get_reward(state,goal,marecages) + gamma * value  # On applique la formule de Bellman pour mettre à jour la valeur de l'état
                     max_value = max(max_value, value)
                 new_V[state] = max_value
 
@@ -115,7 +109,7 @@ def value_iteration(V):  # Voir diapo 31 du cours pour le détail de l'algorithm
     return V
 
 # Calcul des Q-valeurs, permet de déterminer la politique optimale, va chercher à maximiser la valeur de l'état suivant à partir des V-valeurs calculées
-def calculate_q_values(V):
+def calculate_q_values(V,goal,marecages):
     Q = np.zeros((n, m, len(actions)))
     for i in range(n):
         for j in range(m):
@@ -148,12 +142,12 @@ def calculate_q_values(V):
                     else:
                         value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal
 
-                Q[i, j, k] = get_reward(state) + gamma * value
+                Q[i, j, k] = get_reward(state,goal,marecages) + gamma * value
     return Q
 
 
 # Extraction de la politique optimale basée sur les Q-valeurs, on parcourt chaque état et on choisit l'action qui maximise la Q-valeur
-def extract_policy(Q):
+def extract_policy(Q,goal):
     policy = np.empty((n, m), dtype=str)
     for i in range(n):
         for j in range(m):
@@ -165,23 +159,25 @@ def extract_policy(Q):
     return policy
 
 # Extraire le chemin optimal à partir de la politique, on part de l'état de départ et on suit les actions jusqu'à l'arrivée en suivant les actions de la politique
-def extract_path(policy):
+def extract_path(policy,start,goal):
     path = []
     state = start
+    result = 1
     while state != goal:
         path.append(state)
         action = policy[state]
         next_state = get_next_state(state, action)
         if next_state is None or next_state == state or next_state in path:  # Vérifiez la validité et évitez les boucles, attention ici on a fait en sorte qu'il ne puisse plus faire revenir sur ses pieds, voir pour triater le problème ou il y a des égalités dans les Q-valeurs
             print("La politique n'est pas optimale, le chemin est bloqué.")
+            result = 0
             break
         state = next_state
     path.append(goal)
-    return path
+    return path,result
 
 
 # Fonction qui plot les valeurs des états et la politique optimale avec couleurs pour départ, arrivée, et chemin
-def plot_values_and_policy(V, policy, path):
+def plot_values_and_policy(V, policy, path,start,goal,marecages):
     n, m = V.shape
     fig, ax = plt.subplots()
     
@@ -241,7 +237,7 @@ def generate_grid():
     while start == goal:
         goal = (random.randint(0, n-1), random.randint(0, m-1))
     
-    num_marecages = random.randint(1, (n*m)//4)  # Limite le nombre de marécages à un quart des cases
+    num_marecages = random.randint(1, (n*m)//2)  # Limite le nombre de marécages à la moitié des cases
     marecages = set()
     while len(marecages) < num_marecages:
         marecage = (random.randint(0, n-1), random.randint(0, m-1))
@@ -254,16 +250,28 @@ def generate_grid():
 def run_simulation():
     start, goal, marecages = generate_grid()
     V = np.zeros((n, m))  # Initialisation des valeurs des états
-    gamma_values = [0.1, 0.3, 0.5, 0.7, 0.9]  # Différents niveaux de gamma à tester
+    gamma_values = [0.1, 0,2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]  # Différents niveaux de gamma à tester
 
     for gamma in gamma_values:
         print(f"Testing with gamma = {gamma}")
-        V = value_iteration(V, start, goal, marecages, gamma) # Il faut rajouter les paramètres de la fonction value_iteration
-        Q = calculate_q_values(V, start, goal, marecages, gamma) # Il faut rajouter les paramètres de la fonction calculate_q_values
-        policy = extract_policy(Q)
-        result = extract_path(policy, start, goal) # Il faut vérifier si extract path renvoie bine une erreur si le chemin est bloqué
-        print(f"Result for gamma={gamma}: {'Success' if result == 1 else 'Failure'}\n")
-        plot_values_and_policy(V, policy, start, goal, marecages)
+        V = value_iteration(V, goal,marecages) # Il faut rajouter les paramètres de la fonction value_iteration
+        Q = calculate_q_values(V, goal,marecages) # Il faut rajouter les paramètres de la fonction calculate_q_values
+        policy = extract_policy(Q,goal)
+        path,result = extract_path(policy, start, goal) # Il faut vérifier si extract path renvoie bine une erreur si le chemin est bloqué
+        plot_values_and_policy(V, policy, path, start, goal, marecages)
+        if result != 0 :
+            return gamma
+        else :
+            return None
 
-# Exécution de l'algorithme
-run_simulation() 
+# Exécution de l'algorithme 50 fois et calcul du gamma
+gamma_somme = 0
+chemin_trouve = 0 
+for i in range(50) :
+    gamma = run_simulation()
+    if gamma != None :
+        gamma_somme = gamma_somme + gamma
+        chemin_trouve = chemin_trouve + 1
+moyenne = gamma_somme/chemin_trouve
+print(moyenne,chemin_trouve)
+
