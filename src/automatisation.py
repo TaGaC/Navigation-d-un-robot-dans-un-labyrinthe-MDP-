@@ -12,7 +12,6 @@ reward_marecage = -2
 reward_default = 0
 
 # Gamma et epsilon
-gamma = 0.9 # Un γ proche de 1 fait en sorte que l'agent valorise fortement les récompenses futures, ce qui le rend plus stratégique avec une planification à long terme. Un γ proche de 0 rend l'agent myope aux récompenses futures, se concentrant presque exclusivement sur les récompenses immédiates.
 epsilon = 0.01 # >0  un seuil de convergence dans l'itération de valeur. Il détermine à quel point la différence entre les valeurs estimées des états à travers les itérations doit être petite avant que l'algorithme puisse arrêter de s'exécuter.
 
 # Actions possibles
@@ -53,7 +52,7 @@ def get_next_state(state, action):
 
 
 # Algorithme d'itération sur la Valeur (Vi), permet de déterminer les valeurs des états en fonction des récompenses et des valeurs des états voisins, on applique la formule de Bellman pour mettre à jour la valeur de l'état, on répète l'opération jusqu'à ce que sa se stabilise (V(n-1) = V(n)), si c'est pas parfait, le epsilon permet de déterminer la marge d'erreur pour arrêter l'itération
-def value_iteration(V,goal,marecages):  # Voir diapo 31 du cours pour le détail de l'algorithme
+def value_iteration(V,goal,marecages,gamma):  # Voir diapo 31 du cours pour le détail de l'algorithme
     V[goal[0], goal[1]] = reward_goal  # Initialise la valeur de l'état du but avec sa récompense
     max_iterations = 100  # Limite à 100 itérations pour éviter les boucles infinies
     epsilon_threshold = epsilon * (1 - gamma) / (2 * gamma)  # Seuil de convergence basé sur la condition donnée
@@ -109,7 +108,7 @@ def value_iteration(V,goal,marecages):  # Voir diapo 31 du cours pour le détail
     return V
 
 # Calcul des Q-valeurs, permet de déterminer la politique optimale, va chercher à maximiser la valeur de l'état suivant à partir des V-valeurs calculées
-def calculate_q_values(V,goal,marecages):
+def calculate_q_values(V,goal,marecages,gamma):
     Q = np.zeros((n, m, len(actions)))
     for i in range(n):
         for j in range(m):
@@ -254,8 +253,8 @@ def run_simulation():
 
     for gamma in gamma_values:
         print(f"Testing with gamma = {gamma}")
-        V = value_iteration(V, goal,marecages) # Il faut rajouter les paramètres de la fonction value_iteration
-        Q = calculate_q_values(V, goal,marecages) # Il faut rajouter les paramètres de la fonction calculate_q_values
+        V = value_iteration(V, goal,marecages,gamma) # Il faut rajouter les paramètres de la fonction value_iteration
+        Q = calculate_q_values(V, goal,marecages,gamma) # Il faut rajouter les paramètres de la fonction calculate_q_values
         policy = extract_policy(Q,goal)
         path,result = extract_path(policy, start, goal) # Il faut vérifier si extract path renvoie bine une erreur si le chemin est bloqué
         plot_values_and_policy(V, policy, path, start, goal, marecages)
