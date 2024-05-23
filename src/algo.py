@@ -111,8 +111,8 @@ def calculate_q_values(V):
     for i in range(n):
         for j in range(m):
             state = (i, j)
-            #if state == goal:
-            #    continue
+            if state == goal:
+                continue
             for k, action in enumerate(actions):
                 action_key = action[0]  # Prendre la première lettre de l'action
                 next_state = get_next_state(state, action_key)
@@ -151,9 +151,8 @@ def extract_policy(Q):
             if (i, j) == goal:
                 policy[i, j] = 'F'
                 continue
-            
-            
-            """# Trouver la valeur maximale
+
+            # Trouver la valeur maximale
             max_value = np.max(Q[i, j])
 
             # Trouver tous les indices où la valeur maximale apparaît
@@ -170,7 +169,7 @@ def extract_policy(Q):
                             real_act = current_act
                     else :
                         real_act = current_act
-            policy[i, j] = real_act"""
+            policy[i, j] = real_act
     return policy
 
 def dist(state, goal):
