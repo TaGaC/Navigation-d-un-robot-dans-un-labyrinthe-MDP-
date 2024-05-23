@@ -240,13 +240,13 @@ def run_simulation():
 
     for gamma in gamma_values:
         print(f"Testing with gamma = {gamma}")
-        V = value_iteration(V, goal,marecages,gamma) # Il faut rajouter les paramètres de la fonction value_iteration
-        Q = calculate_q_values(V, goal,marecages,gamma) # Il faut rajouter les paramètres de la fonction calculate_q_values
+        V = value_iteration(V, goal,marecages,gamma) 
+        Q = calculate_q_values(V, goal,marecages,gamma) 
         policy = extract_policy(Q,goal)
-        path,result = extract_path(policy, start, goal) # Il faut vérifier si extract path renvoie bine une erreur si le chemin est bloqué
+        path,result = extract_path(policy, start, goal) #renvoie 1 si le chemin est valide, 0 sinon
         #plot_values_and_policy(V, policy, path, start, goal, marecages)
         if result != 0 :
-            return gamma
+            return gamma # On renvoie le premier gamma pour lequel le chemin est trouvé 
     return None
 
 # Exécution de l'algorithme 50 fois et calcul du gamma
