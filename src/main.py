@@ -14,11 +14,11 @@ marecages = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3)]
 # Récompenses
 reward_goal = 10
 reward_marecage = -2
-reward_default =0
+reward_default = 0
 
 # Gamma et epsilon
-gamma = 0.5 # Un γ proche de 1 fait en sorte que l'agent valorise fortement les récompenses futures, ce qui le rend plus stratégique avec une planification à long terme. Un γ proche de 0 rend l'agent myope aux récompenses futures, se concentrant presque exclusivement sur les récompenses immédiates.
-epsilon = 0.1 #  un seuil de convergence dans l'itération de valeur. Il détermine à quel point la différence entre les valeurs estimées des états à travers les itérations doit être petite avant que l'algorithme puisse arrêter de s'exécuter.
+gamma = 0.9 # Un γ proche de 1 fait en sorte que l'agent valorise fortement les récompenses futures, ce qui le rend plus stratégique avec une planification à long terme. Un γ proche de 0 rend l'agent myope aux récompenses futures, se concentrant presque exclusivement sur les récompenses immédiates.
+epsilon = 0.01 # >0  un seuil de convergence dans l'itération de valeur. Il détermine à quel point la différence entre les valeurs estimées des états à travers les itérations doit être petite avant que l'algorithme puisse arrêter de s'exécuter.
 
 # Actions possibles
 actions = ['Haut', 'Bas', 'Gauche', 'Droite']
@@ -58,15 +58,16 @@ def get_next_state(state, action):
 
 
 # Algorithme d'itération sur la Valeur (Vi), permet de déterminer les valeurs des états en fonction des récompenses et des valeurs des états voisins, on applique la formule de Bellman pour mettre à jour la valeur de l'état, on répète l'opération jusqu'à ce que sa se stabilise (V(n-1) = V(n)), si c'est pas parfait, le epsilon permet de déterminer la marge d'erreur pour arrêter l'itération
-def value_iteration(V): 
+def value_iteration(V):  # Voir diapo 31 du cours pour le détail de l'algorithme
     V[goal[0], goal[1]] = reward_goal  # Initialise la valeur de l'état du but avec sa récompense
+    max_iterations = 100  # Limite à 100 itérations pour éviter les boucles infinies
+    epsilon_threshold = epsilon * (1 - gamma) / (2 * gamma)  # Seuil de convergence basé sur la condition donnée
     i = 0
-    while i < 100: # Boucle jusqu'à la convergence, on met une limite de 100 itérations pour éviter les boucles infinies, si le delta reste > au epsilon fixée        
-        delta = 0
-        new_V = np.copy(V) # Copie des valeurs pour éviter les mises à jour simultanées
+    while i < max_iterations:
+        new_V = np.copy(V)  # Copie des valeurs pour éviter les mises à jour simultanées
+        i += 1
         for i in range(n):
             for j in range(m):
-                #On boucle sur chaque état de la grille
                 state = (i, j)
                 if state == goal:
                     continue  # Continue d'ignorer la mise à jour du but durant les itérations
@@ -75,7 +76,7 @@ def value_iteration(V):
                     action_key = action[0]  # Prendre la première lettre de l'action comme clé
                     next_state = get_next_state(state, action_key)
                     if next_state is None:
-                        continue  # Si next_state renvoie none, alors l'action sort des limites, on l'ignore
+                        continue  # Si next_state renvoie None, alors l'action sort des limites, on l'ignore
 
                     # Définir les états latéraux basés sur l'action principale
                     if action_key in ['H', 'B']:  # Mouvements verticaux
@@ -90,25 +91,27 @@ def value_iteration(V):
                         ]
 
                     value = 0.8 * V[next_state]  # Probabilité principale
-                    for side_state in side_states: # Ici on applque les 0,1 de probabilité pour les mouvementns en cas de vent
+                    for side_state in side_states:  # Ici on applique les 0,1 de probabilité pour les mouvements en cas de vent
                         if side_state is not None:
                             value += 0.1 * V[side_state]  # Probabilités latérales
                         else:
-                            value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal, on passerait donc à 0,9 pour la probabilité de l'action principale
+                            value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal  on passerait donc à 0,9 pour la probabilité de l'action principale
 
-                    value = get_reward(state) + gamma * value # On applique la formule de Bellman pour mettre à jour la valeur de l'état
+                    value = get_reward(state) + gamma * value  # On applique la formule de Bellman pour mettre à jour la valeur de l'état
                     max_value = max(max_value, value)
                 new_V[state] = max_value
-                delta = max(delta, abs(new_V[state] - V[state]))
+
+        # Vérifier la condition d'arrêt basée sur la norme
+        if np.linalg.norm(new_V - V) < epsilon_threshold:
+            V[:] = new_V
+            break 
         V[:] = new_V
-        if delta <= epsilon:
-            return V  # Arrête si la convergence est atteinte
-            
-    if i == 100:
+        
+    if i == max_iterations-1:
         print("L'algorithme n'a pas convergé après 100 itérations, vérifiez que Epsilon n'est pas trop petit.")
+    else:
+        print(f"Convergence après {i} itérations.")
     return V
-
-
 
 # Calcul des Q-valeurs, permet de déterminer la politique optimale, va chercher à maximiser la valeur de l'état suivant à partir des V-valeurs calculées
 def calculate_q_values(V):
