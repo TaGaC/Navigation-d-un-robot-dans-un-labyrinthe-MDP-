@@ -57,12 +57,15 @@ def get_next_state(state, action):
     return None  # Retourne None si le déplacement est hors limites
 
 # Itération sur les valeurs
-def value_iteration():
-    global V
+# Algorithme d'itération sur la Valeur (Vi), permet de déterminer les valeurs des états en fonction des récompenses et des valeurs des états voisins, on applique la formule de Bellman pour mettre à jour la valeur de l'état, on répète l'opération jusqu'à ce que sa se stabilise (V(n-1) = V(n)), si c'est pas parfait, le epsilon permet de déterminer la marge d'erreur pour arrêter l'itération
+def value_iteration(V):  # Voir diapo 31 du cours pour le détail de l'algorithme
     V[goal[0], goal[1]] = reward_goal  # Initialise la valeur de l'état du but avec sa récompense
-    while True:
-        delta = 0
-        new_V = np.copy(V)
+    max_iterations = 100  # Limite à 100 itérations pour éviter les boucles infinies
+    epsilon_threshold = epsilon * (1 - gamma) / (2 * gamma)  # Seuil de convergence basé sur la condition donnée
+    i = 0
+    while i < max_iterations:
+        new_V = np.copy(V)  # Copie des valeurs pour éviter les mises à jour simultanées
+        i += 1
         for i in range(n):
             for j in range(m):
                 state = (i, j)
@@ -70,10 +73,10 @@ def value_iteration():
                     continue  # Continue d'ignorer la mise à jour du but durant les itérations
                 max_value = float('-inf')
                 for action in actions:
-                    action_key = action[0]  # Prendre la première lettre de l'action
+                    action_key = action[0]  # Prendre la première lettre de l'action comme clé
                     next_state = get_next_state(state, action_key)
                     if next_state is None:
-                        continue  # Ignore les actions non valides
+                        continue  # Si next_state renvoie None, alors l'action sort des limites, on l'ignore
 
                     # Définir les états latéraux basés sur l'action principale
                     if action_key in ['H', 'B']:  # Mouvements verticaux
@@ -88,24 +91,30 @@ def value_iteration():
                         ]
 
                     value = 0.8 * V[next_state]  # Probabilité principale
-                    for side_state in side_states:
+                    for side_state in side_states:  # Ici on applique les 0,1 de probabilité pour les mouvements en cas de vent
                         if side_state is not None:
                             value += 0.1 * V[side_state]  # Probabilités latérales
                         else:
-                            value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal
+                            value += 0.1 * V[next_state]  # Si mouvement latéral invalide, ajouter valeur de l'état principal  on passerait donc à 0,9 pour la probabilité de l'action principale
 
-                    value = get_reward(state) + gamma * value
+                    value = get_reward(state) + gamma * value  # On applique la formule de Bellman pour mettre à jour la valeur de l'état
                     max_value = max(max_value, value)
                 new_V[state] = max_value
-                #delta = delta + abs(new_V[state] - V[state])
-                delta = max(delta, abs(new_V[state] - V[state]))
+
+        # Vérifier la condition d'arrêt basée sur la norme
+        if np.linalg.norm(new_V - V) < epsilon_threshold:
+            V[:] = new_V
+            break 
         V[:] = new_V
-        if delta <= epsilon * (1 - gamma) / (2*gamma):
-            break
+        
+    if i == max_iterations-1:
+        print("L'algorithme n'a pas convergé après 100 itérations, vérifiez que Epsilon n'est pas trop petit.")
+    else:
+        print(f"Convergence après {i} itérations.")
+    return V
 
 
-
-# Calcul des Q-valeurs
+# Calcul des Q-valeurs, permet de déterminer la politique optimale, va chercher à maximiser la valeur de l'état suivant à partir des V-valeurs calculées
 def calculate_q_values(V):
     Q = np.zeros((n, m, len(actions)))
     for i in range(n):
@@ -113,11 +122,11 @@ def calculate_q_values(V):
             state = (i, j)
             if state == goal:
                 continue
-            for k, action in enumerate(actions):
+            for k, action in enumerate(actions): # On a rajouté un index k pour les actions pour pouvoir ranger les Q-valeurs dans un tableau 3D
                 action_key = action[0]  # Prendre la première lettre de l'action
                 next_state = get_next_state(state, action_key)
                 if next_state is None:
-                    Q[i, j, k] = float('-inf')  # Attribuer une pénalité extrême pour sortir des limites
+                    Q[i, j, k] = float('-inf')  # Attribuer une pénalité extrême pour ne pas aller hors limites
                     continue
 
                 # Définir les états latéraux basés sur l'action principale
@@ -185,7 +194,8 @@ def extract_path(policy):
         path.append(state)
         action = policy[state]
         next_state = get_next_state(state, action)
-        if next_state is None or next_state == state or next_state in path:  # Vérifiez la validité et évitez les boucles
+        if next_state is None or next_state == state or next_state in path:  # Vérifiez la validité et évitez les boucles, attention ici on a fait en sorte qu'il ne puisse plus faire revenir sur ses pieds, voir pour triater le problème ou il y a des égalités dans les Q-valeurs
+            print("La politique n'est pas optimale, le chemin est bloqué.")
             break
         state = next_state
     path.append(goal)
@@ -293,7 +303,7 @@ def lunch_algo(long, lat, start_, goal_, marecages_, reward_goal_, reward_mareca
     V = np.zeros((n, m))
 
     # Exécution de l'algorithme
-    value_iteration()
+    V = value_iteration(V)
     Q = calculate_q_values(V)
     policy = extract_policy(Q)
     path = extract_path(policy)
