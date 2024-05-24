@@ -4,11 +4,11 @@ from matplotlib.colors import ListedColormap
 import random
 
 # Dimensions de la grille
-n, m = 20,20
+n, m = 10,10
 
 # Récompenses
 reward_goal = 5
-reward_marecage = -2
+reward_marecage = -1
 reward_default = 0
 
 # Gamma et epsilon
@@ -104,7 +104,8 @@ def value_iteration(V,goal,marecages,gamma):  # Voir diapo 31 du cours pour le d
     if i == max_iterations-1:
         print("L'algorithme n'a pas convergé après 100 itérations, vérifiez que Epsilon n'est pas trop petit.")
     else:
-        print(f"Convergence après {i} itérations.")
+        #print(f"Convergence après {i} itérations.")
+        pass
     return V
 
 # Calcul des Q-valeurs, permet de déterminer la politique optimale, va chercher à maximiser la valeur de l'état suivant à partir des V-valeurs calculées
@@ -167,7 +168,7 @@ def extract_path(policy,start,goal):
         action = policy[state]
         next_state = get_next_state(state, action)
         if next_state is None or next_state == state or next_state in path:  # Vérifiez la validité et évitez les boucles, attention ici on a fait en sorte qu'il ne puisse plus faire revenir sur ses pieds, voir pour triater le problème ou il y a des égalités dans les Q-valeurs
-            print("La politique n'est pas optimale, le chemin est bloqué.")
+            #print("La politique n'est pas optimale, le chemin est bloqué.")
             result = 0
             break
         state = next_state
@@ -239,7 +240,7 @@ def run_simulation():
     gamma_values = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]  # Différents niveaux de gamma à tester
 
     for gamma in gamma_values:
-        print(f"Testing with gamma = {gamma}")
+        #print(f"Testing with gamma = {gamma}")
         V = value_iteration(V, goal,marecages,gamma) 
         Q = calculate_q_values(V, goal,marecages,gamma) 
         policy = extract_policy(Q,goal)
@@ -252,11 +253,13 @@ def run_simulation():
 # Exécution de l'algorithme 50 fois et calcul du gamma
 gamma_somme = 0
 chemin_trouve = 0 
-for i in range(50) :
+nb_essais = 30
+for i in range(nb_essais) :
     gamma_sim = run_simulation()
     if gamma_sim != None :
         gamma_somme = gamma_somme + gamma_sim
         chemin_trouve = chemin_trouve + 1
 moyenne = gamma_somme/chemin_trouve
-print(moyenne,chemin_trouve)
+print("\n \nMoyenne des gamma pour lesquels un chemin est trouvé : ", moyenne)
+print("Nombre de chemins trouvés où au moins un gamma fonctionne sur les", nb_essais, " : ", chemin_trouve)
 
